@@ -1,13 +1,14 @@
 const express = require("express");
 const http = require("http");
 const { AccessToken } = require("livekit-server-sdk");
+require('dotenv').config(); // Ensure env variables load
 
 const app = express();
 const server = http.createServer(app);
 
 app.use(express.json());
 
-// CORS configuration
+// CORS configuration - Allow Netlify to access Render
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -19,10 +20,6 @@ const PORT = process.env.PORT || 5000;
 
 app.get("/", (req, res) => {
   res.send("VeloCall LiveKit Server is running.");
-});
-
-app.get("/health", (req, res) => {
-  res.status(200).send("Server is healthy.");
 });
 
 // ====================== LIVEKIT TOKEN GENERATOR ======================
@@ -52,17 +49,18 @@ app.post("/api/livekit-token", (req, res) => {
       canPublishData: true,
     });
 
-    const token = at.toJwt();
+    const tokenString = at.toJwt();
 
-    console.log(`Token generated for room: ${room}, identity: ${identity}`);
-    // Explicitly send the token as a string property
-    res.json({ token: token });
+    console.log(`✅ Token created for ${identity} in ${room}`);
+    
+    // PERMANENT FIX: Sending as a clear JSON object with the key "token"
+    res.json({ token: tokenString });
   } catch (error) {
-    console.error("Token generation failed:", error);
+    console.error("❌ Token generation failed:", error);
     res.status(500).json({ error: "Failed to generate token" });
   }
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 VeloCall LiveKit Server LIVE on Port: ${PORT}`);
+  console.log(`🚀 VeloCall Server LIVE on Port: ${PORT}`);
 });
