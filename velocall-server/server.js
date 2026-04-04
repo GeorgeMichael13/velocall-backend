@@ -7,7 +7,7 @@ const server = http.createServer(app);
 
 app.use(express.json());
 
-// CORS
+// CORS configuration
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -34,12 +34,13 @@ app.post("/api/livekit-token", (req, res) => {
   }
 
   try {
+    // Generate the access token using environment variables
     const at = new AccessToken(
       process.env.LIVEKIT_API_KEY,
       process.env.LIVEKIT_API_SECRET,
       {
         identity: identity,
-        ttl: "60m", // 60 minutes
+        ttl: "60m", 
       }
     );
 
@@ -54,7 +55,8 @@ app.post("/api/livekit-token", (req, res) => {
     const token = at.toJwt();
 
     console.log(`Token generated for room: ${room}, identity: ${identity}`);
-    res.json({ token });
+    // Explicitly send the token as a string property
+    res.json({ token: token });
   } catch (error) {
     console.error("Token generation failed:", error);
     res.status(500).json({ error: "Failed to generate token" });
