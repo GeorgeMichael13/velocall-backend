@@ -20,7 +20,6 @@ const PORT = process.env.PORT || 5000;
 app.get("/", (req, res) => {
   res.send("✅ VeloCall LiveKit Server is running.");
 });
-
 // ====================== LIVEKIT TOKEN ENDPOINT ======================
 app.post("/api/livekit-token", async (req, res) => {
   const { room, identity } = req.body || {};
@@ -28,8 +27,8 @@ app.post("/api/livekit-token", async (req, res) => {
   console.log("--- TOKEN REQUEST RECEIVED ---");
   console.log("Room:", room);
   console.log("Identity:", identity);
-  console.log("LIVEKIT_API_KEY present:", !!process.env.LIVEKIT_API_KEY);
-  console.log("LIVEKIT_API_SECRET present:", !!process.env.LIVEKIT_API_SECRET);
+  console.log("API_KEY present:", !!process.env.LIVEKIT_API_KEY);
+  console.log("API_SECRET present:", !!process.env.LIVEKIT_API_SECRET);
   console.log("-----------------------------");
 
   if (!room || !identity) {
@@ -37,10 +36,8 @@ app.post("/api/livekit-token", async (req, res) => {
   }
 
   if (!process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) {
-    console.error("❌ Missing LIVEKIT_API_KEY or LIVEKIT_API_SECRET in Render Environment Variables");
-    return res.status(500).json({ 
-      error: "Server keys not configured. Check Render Environment Variables." 
-    });
+    console.error("❌ Missing LiveKit API keys");
+    return res.status(500).json({ error: "Server keys not configured" });
   }
 
   try {
@@ -48,7 +45,7 @@ app.post("/api/livekit-token", async (req, res) => {
       process.env.LIVEKIT_API_KEY,
       process.env.LIVEKIT_API_SECRET,
       {
-        identity: identity,
+        identity,
         name: identity,
         ttl: "60m",
       }
@@ -56,7 +53,7 @@ app.post("/api/livekit-token", async (req, res) => {
 
     at.addGrant({
       roomJoin: true,
-      room: room,
+      room,
       canPublish: true,
       canSubscribe: true,
       canPublishData: true,
@@ -67,7 +64,7 @@ app.post("/api/livekit-token", async (req, res) => {
     console.log(`✅ Token generated successfully for ${identity} in room ${room}`);
     console.log(`✅ Token length: ${token.length}`);
 
-    // Return plain string → This fixes the "Still received an object" error
+    // CRITICAL FIX: Return plain string (not an object)
     res.json(token);
 
   } catch (error) {
