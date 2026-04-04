@@ -1,14 +1,13 @@
 const express = require("express");
 const http = require("http");
 const { AccessToken } = require("livekit-server-sdk");
-require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
 
 app.use(express.json());
 
-// CORS
+// CORS - Allow frontend from anywhere (Netlify, Vercel, localhost, etc.)
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -29,8 +28,8 @@ app.post("/api/livekit-token", async (req, res) => {
   console.log("--- TOKEN REQUEST RECEIVED ---");
   console.log("Room:", room);
   console.log("Identity:", identity);
-  console.log("API_KEY present:", !!process.env.LIVEKIT_API_KEY);
-  console.log("API_SECRET present:", !!process.env.LIVEKIT_API_SECRET);
+  console.log("LIVEKIT_API_KEY present:", !!process.env.LIVEKIT_API_KEY);
+  console.log("LIVEKIT_API_SECRET present:", !!process.env.LIVEKIT_API_SECRET);
   console.log("-----------------------------");
 
   if (!room || !identity) {
@@ -38,7 +37,7 @@ app.post("/api/livekit-token", async (req, res) => {
   }
 
   if (!process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) {
-    console.error("❌ Missing LiveKit API keys!");
+    console.error("❌ Missing LIVEKIT_API_KEY or LIVEKIT_API_SECRET in Render Environment Variables");
     return res.status(500).json({ 
       error: "Server keys not configured. Check Render Environment Variables." 
     });
@@ -49,7 +48,7 @@ app.post("/api/livekit-token", async (req, res) => {
       process.env.LIVEKIT_API_KEY,
       process.env.LIVEKIT_API_SECRET,
       {
-        identity,
+        identity: identity,
         name: identity,
         ttl: "60m",
       }
@@ -57,7 +56,7 @@ app.post("/api/livekit-token", async (req, res) => {
 
     at.addGrant({
       roomJoin: true,
-      room,
+      room: room,
       canPublish: true,
       canSubscribe: true,
       canPublishData: true,
@@ -68,7 +67,7 @@ app.post("/api/livekit-token", async (req, res) => {
     console.log(`✅ Token generated successfully for ${identity} in room ${room}`);
     console.log(`✅ Token length: ${token.length}`);
 
-    // IMPORTANT: Return plain JWT string (this fixes the "Object" error)
+    // Return plain string → This fixes the "Still received an object" error
     res.json(token);
 
   } catch (error) {
