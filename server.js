@@ -7,7 +7,7 @@ const server = http.createServer(app);
 
 app.use(express.json());
 
-// CORS - Allow frontend from anywhere (Netlify, Vercel, localhost, etc.)
+// CORS - Allow frontend from anywhere
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -17,9 +17,21 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
+// ====================== HEALTH CHECK FOR RENDER ======================
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    service: "VeloCall LiveKit Server",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ====================== ROOT ROUTE ======================
 app.get("/", (req, res) => {
   res.send("✅ VeloCall LiveKit Server is running.");
 });
+
 // ====================== LIVEKIT TOKEN ENDPOINT ======================
 app.post("/api/livekit-token", async (req, res) => {
   const { room, identity } = req.body || {};
@@ -64,7 +76,7 @@ app.post("/api/livekit-token", async (req, res) => {
     console.log(`✅ Token generated successfully for ${identity} in room ${room}`);
     console.log(`✅ Token length: ${token.length}`);
 
-    // CRITICAL FIX: Return plain string (not an object)
+    // CRITICAL: Return plain string (this fixes "Still received an object" error)
     res.json(token);
 
   } catch (error) {
